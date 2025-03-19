@@ -1,222 +1,116 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const playerX = 'X';
-    const playerO = 'O';
-    let currentPlayer = playerX;
-    let gameBoard = ['', '', '', '', '', '', '', '', ''];
-    let gameOver = false;
+def evaluate(board):
+    """Evaluates the Tic-Tac-Toe board for a winner."""
+    # Check rows
+    for row in board:
+        if row[0] == row[1] == row[2] and row[0] != ' ':
+            return 1 if row[0] == 'X' else -1
 
-    const boxes = document.querySelectorAll('.box');
-    const messageDisplay = document.querySelector('.message');
-    const winnerDisplay = document.getElementById('winner');
-    const playAgainBtn = document.querySelector('.play-again');
-    const newGameBtn = document.getElementById('new-game');
-    const playerTypeSelect = document.getElementById('playerType');
+    # Check columns
+    for col in range(3):
+        if board[0][col] == board[1][col] == board[2][col] and board[0][col] != ' ':
+            return 1 if board[0][col] == 'X' else -1
 
-    // Function to check if the current player has won
-    const checkWinner = () => {
-        const winPatterns = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
-            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
-            [0, 4, 8], [2, 4, 6]             // Diagonals
-        ];
+    # Check diagonals
+    if board[0][0] == board[1][1] == board[2][2] and board[0][0] != ' ':
+        return 1 if board[0][0] == 'X' else -1
+    if board[0][2] == board[1][1] == board[2][0] and board[0][2] != ' ':
+        return 1 if board[0][2] == 'X' else -1
 
-        for (const pattern of winPatterns) {
-            const [a, b, c] = pattern;
-            if (gameBoard[a] && gameBoard[a] === gameBoard[b] && gameBoard[a] === gameBoard[c]) {
-                return gameBoard[a];     //this will return x and Y based on the winner
-            }
-        }
+    # Check for draw
+    if all(' ' not in row for row in board):
+        return 0  # Draw
 
-        return null;
-    };
+    return None  # Game not over
 
-    // Function to change the switch background color
-    function changeBg() {
-        // Toggle background color based on the current player
-        if (currentPlayer === "X") {
-            currentPlayer = "O";
-            document.querySelector('#two').style.backgroundColor = "white";
-            document.querySelector('#one').style.backgroundColor = "#DC143C";
-        } else {
-            currentPlayer = "X";
-            document.querySelector('#one').style.backgroundColor = "white";
-            document.querySelector('#two').style.backgroundColor = "#DC143C";
-        }
-    }
+def minimax(board, depth, is_maximizing):
+    """Minimax algorithm for Tic-Tac-Toe."""
+    result = evaluate(board)
 
-    // Function to check if the board is full (tie)
-    const isBoardFull = () => !gameBoard.includes('');
+    if result is not None:
+        return result
 
-    // Function to handle player's move
-    const handlePlayerMove = (index) => {
-        if (!gameOver && gameBoard[index] === '') {
-            // Update game state for the selected move
-            gameBoard[index] = currentPlayer;     //this will be X for the first iteration
-            boxes[index].textContent = currentPlayer;  // also update on the screen
-            boxes[index].classList.add('clicked');
+    if is_maximizing:
+        best_score = -float('inf')
+        for i in range(3):
+            for j in range(3):
+                if board[i][j] == ' ':
+                    board[i][j] = 'X'
+                    score = minimax(board, depth + 1, False)
+                    board[i][j] = ' '  # Undo the move
+                    best_score = max(score, best_score)
+        return best_score
+    else:
+        best_score = float('inf')
+        for i in range(3):
+            for j in range(3):
+                if board[i][j] == ' ':
+                    board[i][j] = 'O'
+                    score = minimax(board, depth + 1, True)
+                    board[i][j] = ' '  # Undo the move
+                    best_score = min(score, best_score)
+        return best_score
 
-            // Check for a winner or a tie
-            const winner = checkWinner();    //the value here will be either x or y or null
-            if (winner) {     //this will be true if the winner has a value and it is not null
-                gameOver = true;
-                messageDisplay.classList.remove('hide');
-                winnerDisplay.textContent = `${winner} wins!`;
-            } else if (isBoardFull()) {
-                gameOver = true;
-                messageDisplay.classList.remove('hide');
-                winnerDisplay.textContent = 'It\'s a tie!';
-            } else {
-                // Switch player and continue the game
-                changeBg();
-                // If AI is the next player, make its move
-                if (currentPlayer === playerO && playerTypeSelect.value === 'ai') {
-                    makeAIMove();
-                }
-            }
-        }
-    };
+def find_best_move(board):
+    """Finds the best move using the minimax algorithm."""
+    best_move = None
+    best_score = -float('inf')
 
-    
-// Function to make AI move using Minimax algorithm with a delay
-const makeAIMove = () => {
-    // Add a delay of 500 milliseconds (adjust the value as needed)
-    setTimeout(() => {
-        // Get the best move from the Minimax algorithm
-        const bestMove = getBestMove();
-        // Handle the AI's move
-        handlePlayerMove(bestMove);
-    }, 500); // 500 milliseconds delay
-};
+    for i in range(3):
+        for j in range(3):
+            if board[i][j] == ' ':
+                board[i][j] = 'X'
+                score = minimax(board, 0, False) #Opponent's turn next.
+                board[i][j] = ' '  # Undo the move
 
+                if score > best_score:
+                    best_score = score
+                    best_move = (i, j)
 
-    // Function to get the best move for the AI using Minimax algorithm
-    const getBestMove = () => {
-        let bestScore = -Infinity;
-        let bestMove;
+    return best_move
 
-        for (let i = 0; i < 9; i++) {
-            if (gameBoard[i] === '') {
-                // Simulate the AI's move and evaluate the score using Minimax
-                gameBoard[i] = playerO;
-                const score = minimax(gameBoard, 0, false);
-                // Undo the simulated move
-                gameBoard[i] = '';
+def print_board(board):
+    """Prints the Tic-Tac-Toe board."""
+    for row in board:
+        print(' | '.join(row))
+        print('-' * 9)
 
-                // Update the best move if the current score is better
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestMove = i;
-                }
-            }
-        }
+def play_game():
+    """Plays a game of Tic-Tac-Toe."""
+    board = [[' ' for _ in range(3)] for _ in range(3)]
+    player_turn = True  # True for X, False for O
 
-        return bestMove;
-    };
+    while True:
+        print_board(board)
+        result = evaluate(board)
+        if result is not None:
+            if result == 1:
+                print("X wins!")
+            elif result == -1:
+                print("O wins!")
+            else:
+                print("It's a draw!")
+            break
 
-    // Minimax algorithm
-    const minimax = (board, depth, isMaximizing) => {
-        const scores = {
-            X: -1,
-            O: 1,
-            tie: 0
-        };
+        if player_turn:
+            while True:
+                try:
+                    row = int(input("Enter row (0, 1, 2): "))
+                    col = int(input("Enter column (0, 1, 2): "))
+                    if 0 <= row <= 2 and 0 <= col <= 2 and board[row][col] == ' ':
+                        board[row][col] = 'X'
+                        break
+                    else:
+                        print("Invalid move. Try again.")
+                except ValueError:
+                    print("Invalid input. Please enter numbers.")
+        else:
+            print("Computer's turn (O):")
+            best_move = find_best_move(board)
+            if best_move:
+                row, col = best_move
+                board[row][col] = 'O'
 
-        const winner = checkWinner();
-        if (winner) {
-            // Return the score based on the winner
-            return scores[winner];
-        }
+        player_turn = not player_turn
 
-        if (isBoardFull()) {
-            // Return a tie score if the board is full
-            return scores.tie;
-        }
-
-        if (isMaximizing) {
-            let maxScore = -Infinity;
-            // Evaluate possible moves and choose the one with the maximum score
-            for (let i = 0; i < 9; i++) {
-                if (board[i] === '') {
-                    board[i] = playerO;
-                    maxScore = Math.max(maxScore, minimax(board, depth + 1, !isMaximizing));
-                    // Undo the simulated move
-                    board[i] = '';
-                }
-            }
-            return maxScore;
-        } else {
-            let minScore = Infinity;
-            // Evaluate possible moves and choose the one with the minimum score
-            for (let i = 0; i < 9; i++) {
-                if (board[i] === '') {
-                    board[i] = playerX;
-                    minScore = Math.min(minScore, minimax(board, depth + 1, !isMaximizing));
-                    // Undo the simulated move
-                    board[i] = '';
-                }
-            }
-            return minScore;
-        }
-    };
-
-    // Event listeners for player's moves
-    boxes.forEach((box, index) => {
-        box.addEventListener('click', () => {
-            handlePlayerMove(index);
-        });
-    });
-
-    // Event listener for Play Again button
-    playAgainBtn.addEventListener('click', () => {
-        // Reset the game state and hide the message display
-        resetGame();
-        messageDisplay.classList.add('hide');
-    });
-
-    // Event listener for New Game button
-    newGameBtn.addEventListener('click', () => {
-        // Reset the game state and hide the message display
-        resetGame();
-        messageDisplay.classList.add('hide');
-    });
-
-    // Function to reset the game
-    const resetGame = () => {
-        // Reset game board and clear UI
-        gameBoard = ['', '', '', '', '', '', '', '', ''];
-        boxes.forEach((box) => {
-            box.textContent = '';
-            box.classList.remove('clicked');
-        });
-
-        // Reset current player and game over state
-        currentPlayer = playerX;
-        gameOver = false;
-
-        // Reset background colors
-        document.querySelector('#one').style.backgroundColor = "white";
-        document.querySelector('#two').style.backgroundColor = "#DC143C";
-    };
-
-    // Event listener for player type selection
-    playerTypeSelect.addEventListener('change', () => {
-        // Reset the game state when changing player type
-        resetGame();
-        // If AI is the next player, make its move
-        if (currentPlayer === playerO && playerTypeSelect.value === 'ai') {
-            makeAIMove();
-            changeBg(); // Ensure background color is updated after AI move
-        }
-    });
-});
-
-// Function Summaries:
-// - checkWinner: Check if there is a winner based on the current game state.
-// - changeBg: Toggle background color based on the current player.
-// - isBoardFull: Check if the game board is full (tie).
-// - handlePlayerMove: Handle the player's move, update the game state, and check for a winner or tie.
-// - makeAIMove: Get the best move for the AI and handle the AI's move.
-// - getBestMove: Simulate AI moves and choose the one with the highest score using Minimax.
-// - minimax: Minimax algorithm for AI decision-making.
-// - resetGame: Reset the game state for a new game.
-
+if __name__ == "__main__":
+    play_game()
