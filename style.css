@@ -1,162 +1,116 @@
-/* Reset default margin and padding for all elements */
-* {
-    margin: 0;
-    padding: 0;
-}
+def evaluate(board):
+    """Evaluates the Tic-Tac-Toe board for a winner."""
+    # Check rows
+    for row in board:
+        if row[0] == row[1] == row[2] and row[0] != ' ':
+            return 1 if row[0] == 'X' else -1
 
-/* Body styling */
-body {
-    background-color: #e32047; /* Set background color */
-    text-align: center; /* Center-align text */
-}
+    # Check columns
+    for col in range(3):
+        if board[0][col] == board[1][col] == board[2][col] and board[0][col] != ' ':
+            return 1 if board[0][col] == 'X' else -1
 
-/* Main game container styling */
-.main {
-    height: 70vh; /* Set height of the main game container */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+    # Check diagonals
+    if board[0][0] == board[1][1] == board[2][2] and board[0][0] != ' ':
+        return 1 if board[0][0] == 'X' else -1
+    if board[0][2] == board[1][1] == board[2][0] and board[0][2] != ' ':
+        return 1 if board[0][2] == 'X' else -1
 
-/* Game board container styling */
-.container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    margin: 20px;
-    height: 60vh; /* Set height of the game board container */
-    width: 60vh; /* Set width of the game board container */
-    background-color: black; /* Set background color */
-    border-radius: 20px; /* Set border radius */
-    margin-top: 50px;
-}
+    # Check for draw
+    if all(' ' not in row for row in board):
+        return 0  # Draw
 
-/* Individual game cell styling */
-.box {
-    height: 18vh; /* Set height of individual game cell */
-    width: 18vh; /* Set width of individual game cell */
-    margin: 6px;
-    border-radius: 15px;
-    border: 2px solid black; /* Set border style and color */
-    background-color: white; /* Set background color */
-    font-size: 3.5em;
-    color: black;
-    transition: transform 0.5s ease; /* Add transition effect */
-}
+    return None  # Game not over
 
-/* Styling for clicked game cell */
-.box.clicked {
-    transform: rotateY(180deg); /* Add a rotation effect for clicked cells */
-}
+def minimax(board, depth, is_maximizing):
+    """Minimax algorithm for Tic-Tac-Toe."""
+    result = evaluate(board)
 
-/* Header styling */
-h1 {
-    margin-top: 10px;
-    margin-bottom: 25px;
-    color: yellow; /* Set text color */
-    font-style: bold;
-    font-family: sans-serif;
-}
+    if result is not None:
+        return result
 
-/* Play Again button styling */
-.play-again {
-    background-color: yellow;
-    padding: 10px;
-    border: none;
-    border-radius: 15px;
-    width: 150px;
-    font-size: 20px;
-}
+    if is_maximizing:
+        best_score = -float('inf')
+        for i in range(3):
+            for j in range(3):
+                if board[i][j] == ' ':
+                    board[i][j] = 'X'
+                    score = minimax(board, depth + 1, False)
+                    board[i][j] = ' '  # Undo the move
+                    best_score = max(score, best_score)
+        return best_score
+    else:
+        best_score = float('inf')
+        for i in range(3):
+            for j in range(3):
+                if board[i][j] == ' ':
+                    board[i][j] = 'O'
+                    score = minimax(board, depth + 1, True)
+                    board[i][j] = ' '  # Undo the move
+                    best_score = min(score, best_score)
+        return best_score
 
-/* Player switch styling */
-.switch {
-    height: 30px;
-    margin-top: 20px;
-    margin-bottom: -10px;
-}
+def find_best_move(board):
+    """Finds the best move using the minimax algorithm."""
+    best_move = None
+    best_score = -float('inf')
 
-/* Styling for player symbols (X and O) */
-span {
-    border: 2px solid black;
-    padding: 10px;
-    display: inline-block;
-    width: 50px;
-    border: 2px solid white;
-    font-family: sans-serif;
-    font-size: 20px;
-    font-style: bold;
-    transition: 0.3s ease;
-}
+    for i in range(3):
+        for j in range(3):
+            if board[i][j] == ' ':
+                board[i][j] = 'X'
+                score = minimax(board, 0, False) #Opponent's turn next.
+                board[i][j] = ' '  # Undo the move
 
-#one {
-    background-color: white;
-    margin-right: -5px;
-}
+                if score > best_score:
+                    best_score = score
+                    best_move = (i, j)
 
-/* Winner message styling */
-#winner {
-    display: inline-block;
-    background-color: #007f5f;
-    color: #f2e8cf;
-    font-family: sans-serif;
-    font-weight: 700;
-    padding: 10px;
-    border: none;
-    border-radius: 15px;
-    width: 150px;
-    font-size: 20px;
-    margin-left: 30px;
-}
+    return best_move
 
-/* New Game button styling */
-#new-game {
-    background-color: yellow;
-    padding: 10px;
-    border: none;
-    border-radius: 15px;
-    width: 150px;
-    font-size: 20px;
-    margin-left: 30px;
-}
+def print_board(board):
+    """Prints the Tic-Tac-Toe board."""
+    for row in board:
+        print(' | '.join(row))
+        print('-' * 9)
 
-/* Styling for the Play Again section */
-.last {
-    display: flex;
-    justify-content: center;
-}
+def play_game():
+    """Plays a game of Tic-Tac-Toe."""
+    board = [[' ' for _ in range(3)] for _ in range(3)]
+    player_turn = True  # True for X, False for O
 
-/* Styling for hidden elements */
-.hide {
-    display: none;
-    transition: 0.5s;
-}
+    while True:
+        print_board(board)
+        result = evaluate(board)
+        if result is not None:
+            if result == 1:
+                print("X wins!")
+            elif result == -1:
+                print("O wins!")
+            else:
+                print("It's a draw!")
+            break
 
-/* Hover effect for game cells */
-.box:hover {
-    background-color: lightgray;
-    color: black;
-    transition: 0.5s ease;
-}
+        if player_turn:
+            while True:
+                try:
+                    row = int(input("Enter row (0, 1, 2): "))
+                    col = int(input("Enter column (0, 1, 2): "))
+                    if 0 <= row <= 2 and 0 <= col <= 2 and board[row][col] == ' ':
+                        board[row][col] = 'X'
+                        break
+                    else:
+                        print("Invalid move. Try again.")
+                except ValueError:
+                    print("Invalid input. Please enter numbers.")
+        else:
+            print("Computer's turn (O):")
+            best_move = find_best_move(board)
+            if best_move:
+                row, col = best_move
+                board[row][col] = 'O'
 
-/* Hover effect for buttons */
-#new-game:hover,
-#winner:hover,
-.play-again:hover {
-    color: white;
-    background-color: black;
-    transition: 0.5s ease;
-    cursor: pointer;
-}
+        player_turn = not player_turn
 
-/* Add this styling for player or AI selection */
-.selection {
-    margin-bottom: 20px;
-    font-family: sans-serif;
-    color: white;
-}
-
-#playerType {
-    padding: 5px;
-    border-radius: 5px;
-}
+if __name__ == "__main__":
+    play_game()
